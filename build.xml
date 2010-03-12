@@ -1,0 +1,129 @@
+<?xml version="1.0"?>
+
+<project name="oink" basedir="." default="all">
+  <property file="build.properties" />
+
+  <property name="name" value="oink" />
+  <property name="display.name" value="Oink Pig UDFs" />
+  <property name="author" value="LinkedIn" />
+  <property environment="env" />
+
+  <path id="main-classpath">
+    <fileset dir="${lib.dir}">
+      <include name="*.jar" />
+    </fileset>
+    <pathelement path="${classes.dir}" />
+  </path>
+
+  <!-- set the build number based on environment variable, otherwise blank -->
+  <property environment="env" description="System environment variables (including those set by Hudson)"/>
+  <condition property="curr.release.snapshot" value="${curr.release}-snapshot-${env.BUILD_NUMBER}" else="${curr.release}">
+       <and>
+          <isset property="env.BUILD_NUMBER" />
+          <not>
+              <equals arg1="" arg2="${env.BUILD_NUMBER}" trim="yes"/>
+          </not> 
+       </and>
+  </condition>
+
+  <path id="test-classpath">
+    <path refid="main-classpath" />
+    <pathelement path="${testclasses.dir}" />
+  </path>
+
+  <macrodef name="replace-dir">
+    <attribute name="dir" />
+    <sequential>
+      <delete dir="@{dir}" />
+      <mkdir dir="@{dir}" />
+    </sequential>
+  </macrodef>
+
+  <target name="all" depends="clean, jar, test, srcjar" description="Build all artifacts." />
+
+  <target name="clean" description="Delete generated files.">
+    <delete dir="${dist.dir}" />
+  	<delete dir="${docs.dir}" />
+  </target>
+
+  <target name="build" description="Compile main source tree java files">
+    <replace-dir dir="${classes.dir}" />
+    <javac fork="true" destdir="${classes.dir}" debug="true" deprecation="true" failonerror="true">
+      <src path="${java.dir}" />
+      <classpath refid="main-classpath" />
+    </javac>
+  </target>
+
+  <target name="buildtest" description="Compile test classes">
+    <replace-dir dir="${testclasses.dir}" />
+    <javac destdir="${testclasses.dir}" debug="true" deprecation="true" failonerror="true">
+      <src path="${unittestsrc.dir}" />
+      <classpath refid="main-classpath" />
+    </javac>
+  </target>
+
+  <target name="test" depends="build, buildtest" description="Build test jar file">
+    <jar destfile="${dist.dir}/${name}-test-${curr.release}.jar">
+      <fileset dir="${testclasses.dir}" />
+    </jar>
+  </target>
+  
+  <target name="jar" depends="build" description="Build oink jar file">
+    <jar destfile="${dist.dir}/${name}-${curr.release}.jar">
+      <fileset dir="${classes.dir}">
+        <include name="**/*.*" />
+      </fileset>
+    </jar>
+  </target>
+
+  <target name="srcjar" description="Build source jar file">
+    <mkdir dir="${dist.dir}" />
+    <jar destfile="${dist.dir}/${name}-${curr.release}-src.jar">
+      <fileset dir="${java.dir}">
+        <include name="**/*.java" />
+      </fileset>
+    </jar>
+  </target>
+
+  <target name="junit" depends="build, buildtest" description="Run junit tests.">
+    <replace-dir dir="${testreport.dir}" />
+    <replace-dir dir="${testhtml.dir}" />
+    <junit printsummary="yes" showoutput="true">
+      <classpath refid="test-classpath" />
+      <formatter type="xml" />
+      <batchtest fork="yes" todir="${testreport.dir}">
+        <fileset dir="${unittestsrc.dir}">
+          <include name="**/*Test.java" />
+        </fileset>
+        <fileset dir="${inttestsrc.dir}">
+          <include name="**/*Test.java" />
+        </fileset>
+      </batchtest>
+    </junit>
+    <junitreport todir="${testhtml.dir}">
+      <fileset dir="${testreport.dir}">
+        <include name="TEST-*.xml" />
+      </fileset>
+      <report todir="${testhtml.dir}" format="frames" />
+    </junitreport>
+  </target>
+
+  <macrodef name="make-javadocs">
+    <attribute name="dir" />
+    <attribute name="packagenames" />
+    <attribute name="javadir" />
+    <sequential>
+      <replace-dir dir="@{dir}" />
+      <javadoc sourcepath="@{javadir}" destdir="@{dir}" windowtitle="${display.name}" source="1.6" author="true" version="true" use="true" packagenames="@{packagenames}">
+        <doctitle>${display.name}</doctitle>
+        <bottom>${author}</bottom>
+        <classpath refid="main-classpath" />
+      </javadoc>
+    </sequential>
+  </macrodef>
+
+  <target name="docs" description="Create complete Javadoc documentation">
+    <make-javadocs dir="${javadoc.dir}" packagenames="*" javadir="${java.dir}"/>
+  </target>
+
+</project>
