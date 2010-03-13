@@ -1,4 +1,4 @@
-package oink.udf.date;
+package oink.udf;
 
 import java.io.IOException;
 
@@ -7,7 +7,7 @@ import org.apache.pig.data.Tuple;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-public class toMinute extends EvalFunc<String> {
+public class toSecond extends EvalFunc<String> {
 	public String exec(Tuple input) throws IOException {
 		// Set the time to default or the output is in UTC
 		DateTimeZone.setDefault(DateTimeZone.UTC);

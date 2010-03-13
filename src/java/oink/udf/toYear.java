@@ -1,4 +1,4 @@
-package oink.udf.date;
+package oink.udf;
 
 import java.io.IOException;
 

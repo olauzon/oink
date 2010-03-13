@@ -1,4 +1,4 @@
-package oink.udf.string;
+package oink.udf;
 
 import java.io.IOException;
 
@@ -15,7 +15,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
  * memberinfo = LOAD '/replicated/member_info.dat' USING VoldemortStorage;
  * filtered_memberinfo = FILTER memberinfo by (restriction is null) OR restriction == 'NONE';
  * names = LIMIT filtered_memberinfo 500;
- * names = FOREACH names GENERATE member_id, first_name, com.linkedin.pig.REPLACE(first_name,'a', 'BULLOCKS');
+ * names = FOREACH names GENERATE member_id, first_name, REPLACE(first_name,'a', 'BULLOCKS');
  * DUMP names; 
  */
 public class REPLACE extends EvalFunc<String>
@@ -26,15 +26,20 @@ public class REPLACE extends EvalFunc<String>
      * @exception java.io.IOException
      */
     public String exec(Tuple input) throws IOException {
-        if (input == null || input.size() == 0)
+        if (input == null || input.size() < 2)
             return null;
 
-        try{
+        try {
             String source = (String)input.get(0);
             String target = (String)input.get(1);
-            String replacewith = (String)input.get(2);
+            String replacewith = "";
+            
+            if(input.size() > 2) {
+            	replacewith = (String)input.get(2);
+            }
+            
             return source.replaceAll(target, replacewith);
-        }catch(Exception e){
+        } catch(Exception e){
             System.err.println("Failed to process input; error - " + e.getMessage());
             return null;
         }
